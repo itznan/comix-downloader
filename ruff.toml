@@ -1,0 +1,17 @@
+target-version = "py310"
+line-length = 120
+
+[lint]
+select = ["F", "E", "W"]
+ignore = [
+    "E501",  # line too long
+    "E741",  # ambiguous variable name (e.g. l for language)
+    "E402",  # module level import not at top of file
+]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"src/__init__.py" = ["F401"]
+"src/*/__init__.py" = ["F401"]
+"src/**/__init__.py" = ["F401"]
+"tests/*" = ["F401", "E402"]
