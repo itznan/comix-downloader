@@ -2,7 +2,7 @@
 """
 Comix Downloader - High-performance Manga/Comic Downloader CLI.
 """
-from comix_downloader import main, cli_entry
+from comix_downloader import cli_entry
 
 if __name__ == "__main__":
     cli_entry()
