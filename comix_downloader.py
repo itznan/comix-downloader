@@ -329,5 +329,29 @@ Examples:
     parser.print_help()
 
 
+def cli_entry():
+    """CLI wrapper providing friendly error messages without raw tracebacks."""
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n[!] Operation cancelled by user.")
+        sys.exit(130)
+    except Exception as e:
+        import urllib.error
+        err_str = str(e)
+        if isinstance(e, urllib.error.HTTPError) and e.code == 403:
+            print("\n❌ Cloudflare Challenge Active (HTTP 403 Forbidden)")
+            print("Comix.to requires valid Cloudflare cookies.")
+            print("Please update 'comix.to_cookies.txt' or run 'python -m src.cookies' to inspect.")
+            sys.exit(1)
+        elif "403" in err_str or "forbidden" in err_str.lower() or "cloudflare" in err_str.lower():
+            print(f"\n❌ Cloudflare Access Blocked: {err_str}")
+            print("Please update 'comix.to_cookies.txt' or run 'python -m src.cookies' to inspect.")
+            sys.exit(1)
+        else:
+            print(f"\n❌ Error: {err_str}")
+            sys.exit(1)
+
+
 if __name__ == "__main__":
-    main()
+    cli_entry()
