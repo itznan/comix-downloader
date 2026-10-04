@@ -1,6 +1,7 @@
 # Comix Downloader
 
 [![CI](https://github.com/itznan/comix-downloader/actions/workflows/ci.yml/badge.svg)](https://github.com/itznan/comix-downloader/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/itznan/comix-downloader/actions/workflows/codeql.yml/badge.svg)](https://github.com/itznan/comix-downloader/actions/workflows/codeql.yml)
 ![Python Versions](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
