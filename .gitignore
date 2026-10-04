@@ -15,6 +15,7 @@ htmlcov/
 venv/
 ENV/
 env/
+test/
 
 # Downloaded files & media
 downloads/

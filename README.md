@@ -19,6 +19,8 @@ High-performance Python CLI downloader and scraper for **comix.to** manga, manhw
 - **Smart Deduplication**: Automatically selects the highest-voted scanlation group to prevent duplicate chapter numbers.
 - **Flexible Ranges**: Specify `-c 1-10`, `-c 1,3,5`, `-c latest`, or `-c 20+`.
 - **Aria2 Acceleration**: Auto-detects and leverages `aria2c` for high-throughput parallel downloads.
+- **Decoupled Browser Worker & SessionBroker**: Asynchronous Playwright worker (`src/browser_worker.py`) and thread-safe session cache (`src/session_manager.py`) with persistent Chrome profile support to solve and maintain Cloudflare Turnstile sessions.
+- **TLS & Fingerprint Alignment**: Dynamic engine version mapping and `curl_cffi` browser impersonation aligned with real Chromium TLS/HTTP2 fingerprints.
 - **Client Security Emulation**: Dynamic Node.js security VM bridge (`comix_signer.js`) for signature generation and token decryption.
 
 ---
@@ -34,6 +36,7 @@ High-performance Python CLI downloader and scraper for **comix.to** manga, manhw
 2. **Install Python dependencies:**
    ```bash
    pip install -r requirements.txt
+   playwright install chromium
    ```
    *(Ensure Node.js 18+ is installed on your system for client security VM computation).*
 
@@ -103,12 +106,23 @@ python main.py --export-bookmarks mal
 
 ---
 
-## Cloudflare & Private Manga Access
+## Cloudflare & Session Initialization
 
-When Comix.to enables Cloudflare verification or when accessing private folders/follows, provide a cookie file export:
+Cloudflare Turnstile binds its security clearance (`cf_clearance`) directly to your machine's public IP address, user-agent string, and TLS fingerprint.
 
-1. Export cookies from your browser for `comix.to` using a standard browser extension (e.g., *Get cookies.txt LOCALLY*).
-2. Save it as `comix.to_cookies.txt` in the project root, or pass it via:
+### 1. Interactive Profile Setup (Automated Detection)
+To initialize a valid browser session with your persistent profile and matching user-agent:
+```bash
+python test/open_browser_profile.py
+```
+- A Chrome window will launch with `--disable-blink-features=AutomationControlled` using your persistent profile directory (`~/.cache/comixapi/profile`).
+- Solve the Turnstile verification if prompted.
+- The script automatically detects successful homepage load, captures valid session cookies (including `cf_clearance`), and saves them to `comix.to_cookies.txt`.
+
+### 2. Manual Cookie Export (Alternative)
+You can also export cookies from your regular browser using an extension like *Get cookies.txt LOCALLY*:
+1. Save the export file as `comix.to_cookies.txt` in the root folder.
+2. The downloader will auto-discover it or you can pass it via `--cookies`:
    ```bash
    python main.py search "Solo Leveling" --cookies comix.to_cookies.txt
    ```
