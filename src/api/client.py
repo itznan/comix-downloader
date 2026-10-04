@@ -48,8 +48,9 @@ class ComixAPI(ChapterMixin, SearchMixin, UserMixin, CollectionMixin):
             self.parse_comic_url()
 
     def _http_get(self, url: str, is_json: bool = False, extra_headers: dict = None, retries: int = 3):
+        import os
         headers = {
-            "User-Agent": USER_AGENT,
+            "User-Agent": os.environ.get("USER_AGENT") or USER_AGENT,
             "Accept": "application/json, text/plain, */*" if is_json else "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Referer": BASE_URL,
         }
@@ -66,7 +67,7 @@ class ComixAPI(ChapterMixin, SearchMixin, UserMixin, CollectionMixin):
             if HAS_CURL_CFFI and cffi_requests:
                 try:
                     cookie_dict = (
-                        {k.strip(): v.strip() for k, v in [c.split("=", 1) for c in self.cookie_header.split("; ") if "=" in c]}
+                        {k.strip(): v.strip() for k, v in [c.strip().split("=", 1) for c in self.cookie_header.replace("; ", ";").split(";") if "=" in c]}
                         if self.cookie_header else None
                     )
                     cffi_headers = {k: v for k, v in headers.items() if k.lower() != "cookie"}

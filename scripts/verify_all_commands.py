@@ -4,7 +4,6 @@ Validates HTTP status codes, output formats, schemas, headers, and parameter han
 """
 
 import sys
-import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient

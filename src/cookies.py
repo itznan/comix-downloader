@@ -24,7 +24,10 @@ def parse_cookie_file(cookie_path: str) -> str:
             if len(parts) >= 7:
                 cookies.append(f"{parts[5]}={parts[6]}")
             elif "=" in line:
-                cookies.append(line)
+                for item in line.split(";"):
+                    item = item.strip()
+                    if "=" in item:
+                        cookies.append(item)
     return "; ".join(cookies)
 
 
@@ -94,7 +97,7 @@ def test_cookies(cookie_header: str = "", user_agent: str = "") -> dict:
 
     # Parse cookie string into key-value dict for native curl-impersonate HTTP/2 handling
     cookie_dict = (
-        {k.strip(): v.strip() for k, v in [c.split("=", 1) for c in resolved.split("; ") if "=" in c]}
+        {k.strip(): v.strip() for k, v in [c.strip().split("=", 1) for c in resolved.replace("; ", ";").split(";") if "=" in c]}
         if resolved else None
     )
 
@@ -221,11 +224,15 @@ if __name__ == "__main__":
         print("[!] No cookie file found at default locations (comix.to_cookies.txt, cookies.txt)")
         cookie_data = resolve_cookies()
 
-    active_ua = args.user_agent or os.environ.get("USER_AGENT") or "Chrome (Default Config)"
-    print(f"[*] Testing with UA:   {active_ua[:60]}...")
+    raw_ua = args.user_agent or os.environ.get("USER_AGENT") or ""
+    active_ua = raw_ua.strip().strip("\"'")
+    while active_ua.count(")") > active_ua.count("("):
+        active_ua = active_ua.rstrip(")")
+    display_ua = active_ua if active_ua else "Chrome (Default Config)"
+    print(f"[*] Testing with UA:   {display_ua[:60]}...")
     print("[*] Testing live connection to https://comix.to ...")
 
-    res = test_cookies(cookie_data, user_agent=args.user_agent)
+    res = test_cookies(cookie_data, user_agent=active_ua)
     transport_name = res.get("transport", "standard")
     print(f"[*] Transport Engine:  {transport_name}")
 

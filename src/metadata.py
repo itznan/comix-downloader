@@ -222,6 +222,21 @@ def download_cover(poster_source, save_path: Path) -> bool:
         "Referer": BASE_URL
     }
     try:
+        from curl_cffi import requests as cffi_requests
+        from .cookies import resolve_cookies
+        cookie_str = resolve_cookies()
+        cookie_dict = (
+            {k.strip(): v.strip() for k, v in [c.strip().split("=", 1) for c in cookie_str.replace("; ", ";").split(";") if "=" in c]}
+            if cookie_str else None
+        )
+        resp = cffi_requests.get(poster_url, headers=headers, cookies=cookie_dict, impersonate="chrome", timeout=20)
+        if resp.status_code == 200 and len(resp.content) > 500:
+            save_file.write_bytes(resp.content)
+            return True
+    except Exception:
+        pass
+
+    try:
         req = urllib.request.Request(poster_url, headers=headers)
         with urllib.request.urlopen(req, timeout=20) as resp:
             data = resp.read()

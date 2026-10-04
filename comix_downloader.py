@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 """
-Unofficial Comix.to PDF Downloader & Search Tool
-Search, browse, and download entire manga / manhwa series or chapters with client security emulation.
+Unofficial Comix.to Manga, Manhwa & Webtoon Downloader CLI
+Search, browse, sync reading lists, and export entire series to CBZ, PDF, and EPUB.
 
 Usage:
   # Search Comix.to and pick interactively
-  python comix_downloader.py search "Solo Leveling"
-  python comix_downloader.py search "Leveling" --type manhwa --status finished --sort views_7d:desc
+  python main.py search "Solo Leveling"
+  python main.py search "Leveling" --type manhwa --status finished --sort views_7d:desc
 
-  # Download from title URL
-  python comix_downloader.py https://comix.to/title/<title-id-or-slug>
+  # Download from title URL (as CBZ, PDF, or EPUB)
+  python main.py https://comix.to/title/<slug> -c 1-10 --cbz
+  python main.py https://comix.to/title/<slug> -c 1-10 --epub
+  python main.py https://comix.to/title/<slug> -c 1-10 --merge
+
+  # Account follows & library sync
+  python main.py following
+  python main.py sync --unread-only
+
+  # Run local REST API & Swagger UI
+  python main.py server --port 8000
 """
 
 import sys
@@ -34,42 +43,45 @@ from src import ComixDownloader
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Unofficial Comix.to Manga / Manhwa PDF Downloader & Search Tool",
+        description="Unofficial Comix.to Manga / Manhwa Downloader & CLI Tool (CBZ, PDF, EPUB)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Account & Library management (requires cookies)
-  python comix_downloader.py sync
-  python comix_downloader.py --sync
-  python comix_downloader.py --export-bookmarks mal
-  python comix_downloader.py --export-bookmarks anilist
-  python comix_downloader.py following
+  python main.py following
+  python main.py following --ua "<your browser User-Agent>"
+  python main.py sync
+  python main.py --sync --unread-only
+  python main.py --export-bookmarks mal
+  python main.py --export-bookmarks anilist
 
   # Discover trending / top manhwa and manga
-  python comix_downloader.py trending --limit 10
-  python comix_downloader.py trending --days 7 --limit 10
-  python comix_downloader.py trending --trend-type follows --days 7
+  python main.py trending --limit 10
+  python main.py trending --days 7 --limit 10
+  python main.py trending --trend-type follows --days 7
 
   # Search Comix.to and pick interactively to download
-  python comix_downloader.py search "Solo Leveling"
-  python comix_downloader.py search "Leveling" --type manhwa --status finished --sort views_7d:desc
+  python main.py search "Solo Leveling"
+  python main.py search "Leveling" --type manhwa --status finished --sort views_7d:desc
 
-  # Download all chapters as individual PDFs
-  python comix_downloader.py https://comix.to/title/<title-id-or-slug>
-
-  # Download specific chapters and merge into one single volume
-  python comix_downloader.py https://comix.to/title/<title-id-or-slug> -c 1-5 --merge
+  # Download all chapters as CBZ, PDF, or EPUB
+  python main.py https://comix.to/title/<slug> --cbz
+  python main.py https://comix.to/title/<slug> --epub
+  python main.py https://comix.to/title/<slug> -c 1-10 --merge
 
   # Download starting from a specific chapter URL onwards
-  python comix_downloader.py https://comix.to/title/<slug>/<chapterId>-chapter-10 --from-here
+  python main.py https://comix.to/title/<slug>/<chapterId>-chapter-10 --from-here
 
   # Download curated collections and reading lists
-  python comix_downloader.py collection <collection-id-or-url>
-  python comix_downloader.py collection 123 --dry-run
+  python main.py collection <collection-id-or-url>
+  python main.py collection 123 --dry-run
 
   # List all scanlation groups for a title
-  python comix_downloader.py groups <title-slug-or-url>
-  python comix_downloader.py https://comix.to/title/<slug> --list-groups
+  python main.py groups <title-slug-or-url>
+  python main.py https://comix.to/title/<slug> --list-groups
+
+  # Start local REST API & Swagger UI server
+  python main.py server --port 8000
         """
     )
     parser.add_argument("target", nargs="?", default=None, help="Comic title URL / slug, or 'search', 'trending', 'collection', 'groups', 'sync', 'export', 'following', 'history', 'server' command")
@@ -116,6 +128,7 @@ Examples:
     # Downloader options
     parser.add_argument("-m", "--merge", action="store_true", help="Merge all downloaded chapters into a single complete volume file")
     parser.add_argument("--cookies", help="Path to Netscape or key=value cookies file (default: comix.to_cookies.txt)")
+    parser.add_argument("--ua", "--user-agent", dest="user_agent", default=None, help="Custom User-Agent string to match your browser session")
     parser.add_argument("-t", "--threads", type=int, default=8, help="Number of concurrent image download threads (default: 8)")
     parser.add_argument("--aria2", dest="use_aria2", action="store_true", default=None, help="Force use aria2c for accelerated downloading")
     parser.add_argument("--no-aria2", dest="use_aria2", action="store_false", help="Disable aria2c and use standard Python threads")
@@ -132,6 +145,13 @@ Examples:
     parser.add_argument("--no-comicinfo", dest="generate_comicinfo", action="store_false", default=True, help="Disable generating ComicInfo.xml metadata file")
 
     args = parser.parse_args()
+
+    if args.user_agent:
+        import os
+        ua = args.user_agent.strip().strip("\"'")
+        while ua.count(")") > ua.count("("):
+            ua = ua.rstrip(")")
+        os.environ["USER_AGENT"] = ua.strip()
 
     # Determine export format
     selected_format = "pdf"

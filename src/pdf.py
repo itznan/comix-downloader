@@ -35,8 +35,9 @@ def download_single_image(img_url: str, save_path: Path, retries: int = 4) -> bo
     """Download single image file using Python urllib with retries."""
     headers = {
         "User-Agent": USER_AGENT,
-        "Referer": BASE_URL
     }
+    if "comix.to" in img_url:
+        headers["Referer"] = BASE_URL
     for attempt in range(retries):
         try:
             req = urllib.request.Request(img_url, headers=headers)
@@ -60,7 +61,8 @@ def download_images_aria2c(download_tasks: list, temp_dir: Path, concurrency: in
         lines.append(f"  dir={temp_dir_str}")
         lines.append(f"  out={path.name}")
         lines.append(f"  header=User-Agent: {USER_AGENT}")
-        lines.append(f"  header=Referer: {BASE_URL}")
+        if "comix.to" in url:
+            lines.append(f"  header=Referer: {BASE_URL}")
 
     input_file.write_text("\n".join(lines), encoding="utf-8")
 
